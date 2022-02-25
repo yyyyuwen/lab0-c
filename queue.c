@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -172,13 +173,7 @@ bool q_delete_mid(struct list_head *head)
     // https://leetcode.com/problems/delete-the-middle-node-of-a-linked-list/
     if (!head || list_empty(head))
         return false;
-    // use Tortoise and Hare Algorithm to find the middle node.
-    struct list_head *slow = head, *fast = head;
-    while (fast->next != head && fast->next->next != head) {
-        fast = fast->next->next;
-        slow = slow->next;
-    }
-
+    struct list_head *slow = find_middle(head);
     element_t *mid_node = list_entry(slow, element_t, list);
     list_del_init(slow);
     q_release_element(mid_node);
@@ -246,12 +241,12 @@ void q_swap(struct list_head *head)
  */
 void q_reverse(struct list_head *head)
 {
-    if (!head || list_empty(head))
+    if (!head)
         return;
     struct list_head *prev_node = head, *node = head->next;
     do {
-        prev_node->prev = node;
         prev_node->next = prev_node->prev;
+        prev_node->prev = node;
         prev_node = node;
         node = node->next;
     } while (prev_node != head);
@@ -262,4 +257,63 @@ void q_reverse(struct list_head *head)
  * No effect if q is NULL or empty. In addition, if q has only one
  * element, do nothing.
  */
-void q_sort(struct list_head *head) {}
+void q_sort(struct list_head *head)
+{
+    if (!head || !head->next || list_is_singular(head))
+        return head;
+
+    head->prev->next = NULL;
+    head->next = divide_list(head->next);
+}
+
+struct list_head *divide_list(struct list_head *head)
+{
+    if (!head || !head->next)
+        return head;
+    struct list_head *mid = find_middle(head);
+    struct list_head *right, *left;
+    right = mid;
+    mid->next = NULL;
+
+    left = divide_list(head);
+    right = divide_list(right);
+
+    return merge_lists(left, right);
+}
+
+
+struct list_head *merge_lists(struct list_head *l1, struct list_head *l2)
+{
+    struct list_head *head = NULL;
+    struct list_head **pptr = &head, **node = NULL;
+
+    // find the element from l1 and l2.
+    while (l1 && l2) {
+        element_t *e1 = list_entry(l1, element_t, list);
+        element_t *e2 = list_entry(l2, element_t, list);
+
+        node = strcmp(e1->value, e2->value) < 0 ? &l1 : &l2;
+        *pptr = *node;
+        pptr = &(*pptr)->next;
+        *node = (*node)->next;
+    }
+
+    // connect the rest of the list at the tail
+    *pptr = (struct list_head *) ((uintptr_t) l1 | (uintptr_t) l2);
+    return head;
+}
+
+struct list_head *find_middle(const struct list_head *head)
+{
+    if (!head || list_empty(head))
+        return NULL;
+    // use Tortoise and Hare Algorithm to find the middle node.
+    struct list_head *slow = head, *fast = head;
+    while (fast->next != head && fast->next->next != head) {
+        fast = fast->next->next;
+        slow = slow->next;
+    }
+    // find the middle node.
+    slow = slow->next;
+    return slow;
+}
