@@ -168,12 +168,19 @@ int q_size(struct list_head *head)
  * Return true if successful.
  * Return false if list is NULL or empty.
  */
+
 bool q_delete_mid(struct list_head *head)
 {
     // https://leetcode.com/problems/delete-the-middle-node-of-a-linked-list/
     if (!head || list_empty(head))
         return false;
-    struct list_head *slow = find_middle(head);
+    // use Tortoise and Hare Algorithm to find the middle node.
+    struct list_head *slow = head, *fast = head;
+    while (fast->next != head && fast->next->next != head) {
+        fast = fast->next->next;
+        slow = slow->next;
+    }
+    slow = slow->next;
     element_t *mid_node = list_entry(slow, element_t, list);
     list_del_init(slow);
     q_release_element(mid_node);
@@ -196,15 +203,19 @@ bool q_delete_dup(struct list_head *head)
     if (!head || list_empty(head) || list_is_singular(head))
         return false;
     element_t *pos, *next_pos;
-    char *cur_value = "";
+    bool check_val = false;
 
     list_for_each_entry_safe (pos, next_pos, head, list) {
         // if different
-        if (strcmp(cur_value, pos->value)) {
-            cur_value = pos->value;
-        } else {
+        if ((pos->list.next != head) &&
+            !(strcmp(pos->value, next_pos->value))) {
             list_del_init(&pos->list);
             q_release_element(pos);
+            check_val = true;
+        } else if (check_val) {
+            list_del_init(&pos->list);
+            q_release_element(pos);
+            check_val = false;
         }
     }
 
@@ -217,18 +228,11 @@ bool q_delete_dup(struct list_head *head)
 void q_swap(struct list_head *head)
 {
     // https://leetcode.com/problems/swap-nodes-in-pairs/
-    struct list_head **pp = &head->next;
-    struct list_head *first, *second;
-    for (; (*pp != head) && (*pp != head->next); pp = &(*pp)->next->next) {
-        first = *pp;
-        second = first->next;
-
-        first->next = second->next;
-        second->next = first;
-        second->next->prev = first;
-        second->prev = first->prev;
-        first->prev = second;
-        *pp = second;
+    if (!head)
+        return;
+    struct list_head *first = head->next;
+    for (; (first != head) && (first->next != head); first = first->next) {
+        list_move(first, first->next);
     }
 }
 
@@ -259,21 +263,35 @@ void q_reverse(struct list_head *head)
  */
 void q_sort(struct list_head *head)
 {
-    if (!head || !head->next || list_is_singular(head))
-        return head;
+    if ((!head || list_empty(head)) || list_is_singular(head))
+        return;
 
+    //
     head->prev->next = NULL;
     head->next = divide_list(head->next);
+
+    struct list_head *node = head->next, *prev = head;
+    for (; node->next != NULL; node = node->next) {
+        node->prev = prev;
+        prev = node;
+    }
+    node->prev = prev;
+    node->next = head;
+    head->prev = node;
 }
 
 struct list_head *divide_list(struct list_head *head)
 {
     if (!head || !head->next)
         return head;
-    struct list_head *mid = find_middle(head);
+
+    struct list_head *fast = head->next, *slow = head;
+    for (; fast && fast->next; fast = fast->next->next) {
+        slow = slow->next;
+    }
     struct list_head *right, *left;
-    right = mid;
-    mid->next = NULL;
+    right = slow->next;
+    slow->next = NULL;
 
     left = divide_list(head);
     right = divide_list(right);
@@ -301,19 +319,4 @@ struct list_head *merge_lists(struct list_head *l1, struct list_head *l2)
     // connect the rest of the list at the tail
     *pptr = (struct list_head *) ((uintptr_t) l1 | (uintptr_t) l2);
     return head;
-}
-
-struct list_head *find_middle(const struct list_head *head)
-{
-    if (!head || list_empty(head))
-        return NULL;
-    // use Tortoise and Hare Algorithm to find the middle node.
-    struct list_head *slow = head, *fast = head;
-    while (fast->next != head && fast->next->next != head) {
-        fast = fast->next->next;
-        slow = slow->next;
-    }
-    // find the middle node.
-    slow = slow->next;
-    return slow;
 }
