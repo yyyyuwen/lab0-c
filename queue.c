@@ -107,11 +107,12 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
     if (!head || list_empty(head))
         return NULL;
     element_t *remove_ele = list_first_entry(head, element_t, list);
-    list_del(head->next);
+    list_del_init(head->next);
     if (sp) {
         // copy to *sp from remove_ele->value.
-        strncpy(sp, remove_ele->value, bufsize - 1);
-        sp[bufsize - 1] = '\0';
+        size_t len = strnlen(remove_ele->value, bufsize - 1);
+        strncpy(sp, remove_ele->value, len);
+        sp[len] = '\0';
     }
     return remove_ele;
 }
@@ -125,11 +126,12 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
     if (!head || list_empty(head))
         return NULL;
     element_t *remove_ele = list_last_entry(head, element_t, list);
-    list_del(head->prev);
+    list_del_init(head->prev);
     if (sp) {
         // copy to *sp from remove_ele->value.
-        strncpy(sp, remove_ele->value, bufsize - 1);
-        sp[bufsize - 1] = '\0';
+        size_t len = strnlen(remove_ele->value, bufsize - 1);
+        strncpy(sp, remove_ele->value, len);
+        sp[len] = '\0';
     }
     return remove_ele;
 }
@@ -320,5 +322,3 @@ void q_sort(struct list_head *head)
     node->next = head;
     head->prev = node;
 }
-
-
