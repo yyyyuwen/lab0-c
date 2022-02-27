@@ -256,25 +256,6 @@ void q_reverse(struct list_head *head)
     } while (prev_node != head);
 }
 
-struct list_head *divide_list(struct list_head *head)
-{
-    if (!head || !head->next)
-        return head;
-
-    struct list_head *fast = head->next, *slow = head;
-    for (; fast && fast->next; fast = fast->next->next) {
-        slow = slow->next;
-    }
-    struct list_head *right, *left;
-    right = slow->next;
-    slow->next = NULL;
-
-    left = divide_list(head);
-    right = divide_list(right);
-
-    return merge_lists(left, right);
-}
-
 
 struct list_head *merge_lists(struct list_head *l1, struct list_head *l2)
 {
@@ -295,6 +276,25 @@ struct list_head *merge_lists(struct list_head *l1, struct list_head *l2)
     // connect the rest of the list at the tail
     *pptr = (struct list_head *) ((uintptr_t) l1 | (uintptr_t) l2);
     return head;
+}
+
+struct list_head *divide_list(struct list_head *head)
+{
+    if (!head || !head->next)
+        return head;
+
+    struct list_head *fast = head->next, *slow = head;
+    for (; fast && fast->next; fast = fast->next->next) {
+        slow = slow->next;
+    }
+    struct list_head *right, *left;
+    right = slow->next;
+    slow->next = NULL;
+
+    left = divide_list(head);
+    right = divide_list(right);
+
+    return merge_lists(left, right);
 }
 
 /*
