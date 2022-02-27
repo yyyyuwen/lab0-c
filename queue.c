@@ -256,30 +256,6 @@ void q_reverse(struct list_head *head)
     } while (prev_node != head);
 }
 
-/*
- * Sort elements of queue in ascending order
- * No effect if q is NULL or empty. In addition, if q has only one
- * element, do nothing.
- */
-void q_sort(struct list_head *head)
-{
-    if ((!head || list_empty(head)) || list_is_singular(head))
-        return;
-
-    //
-    head->prev->next = NULL;
-    head->next = divide_list(head->next);
-
-    struct list_head *node = head->next, *prev = head;
-    for (; node->next != NULL; node = node->next) {
-        node->prev = prev;
-        prev = node;
-    }
-    node->prev = prev;
-    node->next = head;
-    head->prev = node;
-}
-
 struct list_head *divide_list(struct list_head *head)
 {
     if (!head || !head->next)
@@ -320,3 +296,29 @@ struct list_head *merge_lists(struct list_head *l1, struct list_head *l2)
     *pptr = (struct list_head *) ((uintptr_t) l1 | (uintptr_t) l2);
     return head;
 }
+
+/*
+ * Sort elements of queue in ascending order
+ * No effect if q is NULL or empty. In addition, if q has only one
+ * element, do nothing.
+ */
+void q_sort(struct list_head *head)
+{
+    if ((!head || list_empty(head)) || list_is_singular(head))
+        return;
+
+    //
+    head->prev->next = NULL;
+    head->next = divide_list(head->next);
+
+    struct list_head *node = head->next, *prev = head;
+    for (; node->next != NULL; node = node->next) {
+        node->prev = prev;
+        prev = node;
+    }
+    node->prev = prev;
+    node->next = head;
+    head->prev = node;
+}
+
+
