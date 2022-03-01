@@ -289,6 +289,7 @@ struct list_head *divide_list(struct list_head *head)
     for (; fast && fast->next; fast = fast->next->next) {
         slow = slow->next;
     }
+
     struct list_head *right, *left;
     right = slow->next;
     slow->next = NULL;
